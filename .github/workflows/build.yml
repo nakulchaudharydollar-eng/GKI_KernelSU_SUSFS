@@ -330,14 +330,18 @@ jobs:
     - name: Force Inject Custom Tweak Flags
       run: |
         FRAGMENT_PATH="${{ github.workspace }}/wild_gki.fragment"
+        echo "# --- NETWORK & BBRv3 CONGESTION CONTROL TWEAKS ---" >> "$FRAGMENT_PATH"
         echo "CONFIG_TCP_CONG_BBR=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_DEFAULT_BBR=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> "$FRAGMENT_PATH"
         echo "CONFIG_NET_EMATCH=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_NET_CLS_ACT=y" >> "$FRAGMENT_PATH"
+        echo "# --- ADVANCED WIREGUARD VPN ACCELERATION ---" >> "$FRAGMENT_PATH"
         echo "CONFIG_WIREGUARD=y" >> "$FRAGMENT_PATH"
+        echo "# --- GAMING & EAS SCHEDULER LOW LATENCY TWEAKS ---" >> "$FRAGMENT_PATH"
         echo "CONFIG_SCHED_AUTOGROUP=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_SCHED_HRTICK=y" >> "$FRAGMENT_PATH"
+        echo "# --- STORAGE I/O HANDLING & F2FS FLASH TUNING ---" >> "$FRAGMENT_PATH"
         echo "CONFIG_F2FS_FS_XATTR=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_F2FS_FS_SECURITY=y" >> "$FRAGMENT_PATH"
         echo "CONFIG_F2FS_CHECK_FS=n" >> "$FRAGMENT_PATH"

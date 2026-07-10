@@ -153,10 +153,23 @@ jobs:
         if [ -d "kernel_patches/common" ]; then cd kernel_patches/common; elif [ -d "aosp" ]; then cd aosp; fi
         echo "Navigated to target folder: $(pwd)"
         
-        # Hardcode the export flag directly into the source file layout bypassing the patch engine
-        sed -i '/sys_fstatat(int dfd, const char __user \*filename, struct stat __user \*bf)/,/}/ { /}/a \EXPORT_SYMBOL(sys_fstatat);' fs/namei.c
+        # Safe python injection block - no escaping or text format degradation
+        python3 -c "
+        with open('fs/namei.c', 'r') as f:
+            content = f.read()
         
-        echo "ZeroMount kernel hook successfully injected directly into namei.c"
+        target = 'sys_fstatat(int dfd, const char __user *filename, struct stat __user *bf)\n{\n\treturn do_fstatat(dfd, filename, bf, 0);\n}'
+        replacement = target + '\nEXPORT_SYMBOL(sys_fstatat);'
+        
+        if target in content:
+            content = content.replace(target, replacement)
+            with open('fs/namei.c', 'w') as f:
+                f.write(content)
+            print('ZeroMount kernel hook successfully injected directly into namei.c via python engine.')
+        else:
+            print('Error: Target function layout pattern matching failed!')
+            exit(1)
+        "
 
     - name: Baseband Guard
       if: (contains(inputs.feature_set, 'BBG') || inputs.feature_set == 'FULL')

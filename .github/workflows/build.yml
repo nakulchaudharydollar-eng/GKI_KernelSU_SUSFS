@@ -147,6 +147,18 @@ jobs:
         os_patch_level: ${{ inputs.os_patch_level }}
         sublevel: ${{ steps.extract.outputs.sublevel }}
 
+    - name: Inject ZeroMount VFS Patches
+      if: inputs.kernel_version == '6.6'
+      run: |
+        if [ -d "kernel_patches/common" ]; then cd kernel_patches/common; elif [ -d "aosp" ]; then cd aosp; fi
+        echo "Navigated to: $(pwd)"
+        cp ${{ github.workspace }}/kernel_patches/zm.patch ./zm.patch
+        if git apply --check zm.patch 2>/dev/null; then
+          git apply zm.patch
+        else
+          patch -p1 < zm.patch
+        fi
+
     - name: Baseband Guard
       if: (contains(inputs.feature_set, 'BBG') || inputs.feature_set == 'FULL')
       uses: ./.github/actions/bbg
@@ -316,6 +328,24 @@ jobs:
         clear_stats: true
 
     - name: Initialize Config Fragment
+    - name: Force Inject Custom Tweak Flags
+      run: |
+        FRAGMENT_PATH="${{ github.workspace }}/wild_gki.fragment"
+        echo "# --- NETWORK & BBRv3 CONGESTION CONTROL TWEAKS ---" >> "$FRAGMENT_PATH"
+        echo "CONFIG_TCP_CONG_BBR=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_DEFAULT_BBR=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_DEFAULT_TCP_CONG=\"bbr\"" >> "$FRAGMENT_PATH"
+        echo "CONFIG_NET_EMATCH=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_NET_CLS_ACT=y" >> "$FRAGMENT_PATH"
+        echo "# --- ADVANCED WIREGUARD VPN ACCELERATION ---" >> "$FRAGMENT_PATH"
+        echo "CONFIG_WIREGUARD=y" >> "$FRAGMENT_PATH"
+        echo "# --- GAMING & EAS SCHEDULER LOW LATENCY TWEAKS ---" >> "$FRAGMENT_PATH"
+        echo "CONFIG_SCHED_AUTOGROUP=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_SCHED_HRTICK=y" >> "$FRAGMENT_PATH"
+        echo "# --- STORAGE I/O HANDLING & F2FS FLASH TUNING ---" >> "$FRAGMENT_PATH"
+        echo "CONFIG_F2FS_FS_XATTR=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_F2FS_FS_SECURITY=y" >> "$FRAGMENT_PATH"
+        echo "CONFIG_F2FS_CHECK_FS=n" >> "$FRAGMENT_PATH"
       run: touch "${{ github.workspace }}/wild_gki.fragment"
 
     - name: Build Normal Kernel
